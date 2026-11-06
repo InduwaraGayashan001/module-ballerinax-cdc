@@ -259,3 +259,20 @@ test.dependsOn ":${packageName}-compiler-plugin:build"
 test.finalizedBy ":${packageName}-compiler-plugin-tests:test"
 publishToMavenLocal.dependsOn build
 publish.dependsOn build
+
+// [DO NOT MERGE] Stage the unreleased cdc.schema.azure.blob.driver 1.1.1 into the test distribution
+// so the GraalVM tests can be verified before the driver is released.
+tasks.register('stageTestAzureBlobDriver') {
+    dependsOn copyStdlibs
+    def driverBala = file('test-drivers/ballerinax-cdc.schema.azure.blob.driver-java21-1.1.1.bala')
+    def buildDirectory = layout.buildDirectory.get().asFile
+    doLast {
+        buildDirectory.listFiles().findAll { it.isDirectory() && it.name.startsWith('jballerina-tools-') }.each { dist ->
+            def target = new File(dist, 'repo/bala/ballerinax/cdc.schema.azure.blob.driver/1.1.1/java21')
+            ant.unzip(src: driverBala, dest: target)
+            println "Staged ${driverBala.name} into ${target}"
+        }
+    }
+}
+updateTomlFiles.dependsOn stageTestAzureBlobDriver
+test.dependsOn stageTestAzureBlobDriver
